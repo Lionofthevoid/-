@@ -1,8 +1,7 @@
 from app.database.db import get_connection
 
 
-def save_items(message_id: int, items: list):
-    conn = get_connection()
+def save_items(conn, message_id: int, items: list):
     cursor = conn.cursor()
 
     for item in items:
@@ -19,29 +18,26 @@ def save_items(message_id: int, items: list):
             item["quantity"]
         ))
 
-    conn.commit()
-    conn.close()
-
 
 def get_items(message_id: int):
     conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT product, quantity
-        FROM writeoff_items
-        WHERE message_id = ?
-    """, (message_id,))
+    try:
+        cursor = conn.cursor()
 
-    rows = cursor.fetchall()
+        cursor.execute("""
+            SELECT product, quantity
+            FROM writeoff_items
+            WHERE message_id = ?
+        """, (message_id,))
 
-    conn.close()
+        return cursor.fetchall()
 
-    return rows
+    finally:
+        conn.close()
 
 
-def delete_items(message_id: int):
-    conn = get_connection()
+def delete_items(conn, message_id: int):
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -49,77 +45,72 @@ def delete_items(message_id: int):
         WHERE message_id = ?
     """, (message_id,))
 
-    conn.commit()
-    conn.close()
-
 
 def delete_all():
     conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("DELETE FROM writeoff_items")
-    cursor.execute("DELETE FROM messages")
+    try:
+        cursor = conn.cursor()
 
-    conn.commit()
-    conn.close()
+        cursor.execute("DELETE FROM writeoff_items")
+        cursor.execute("DELETE FROM messages")
+
+        conn.commit()
+
+    finally:
+        conn.close()
 
 
 def get_day_summary():
-    """
-    Возвращает сумму по каждому товару.
-    """
-
     conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT
-            product,
-            SUM(quantity)
-        FROM writeoff_items
-        GROUP BY product
-        ORDER BY product
-    """)
+    try:
+        cursor = conn.cursor()
 
-    rows = cursor.fetchall()
+        cursor.execute("""
+            SELECT
+                product,
+                SUM(quantity)
+            FROM writeoff_items
+            GROUP BY product
+            ORDER BY product
+        """)
 
-    conn.close()
+        return cursor.fetchall()
 
-    return rows
+    finally:
+        conn.close()
+
 
 def get_report():
     conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT
-            messages.reason,
-            writeoff_items.product,
-            SUM(writeoff_items.quantity) as quantity
-        FROM writeoff_items
-        JOIN messages
-            ON messages.message_id = writeoff_items.message_id
-        GROUP BY
-            messages.reason,
-            writeoff_items.product
-        ORDER BY
-            messages.reason,
-            writeoff_items.product
-    """)
+    try:
+        cursor = conn.cursor()
 
-    rows = cursor.fetchall()
+        cursor.execute("""
+            SELECT
+                messages.reason,
+                writeoff_items.product,
+                SUM(writeoff_items.quantity) as quantity
+            FROM writeoff_items
+            JOIN messages
+                ON messages.message_id = writeoff_items.message_id
+            GROUP BY
+                messages.reason,
+                writeoff_items.product
+            ORDER BY
+                messages.reason,
+                writeoff_items.product
+        """)
 
-    conn.close()
+        return cursor.fetchall()
 
-    return rows
+    finally:
+        conn.close()
 
-def change_quantity(message_id: int, items: list, sign: int):
-    """
-    sign = 1  -> добавить
-    sign = -1 -> вычесть
-    """
 
-    conn = get_connection()
+def change_quantity(conn, message_id: int, items: list, sign: int):
     cursor = conn.cursor()
 
     for item in items:
@@ -136,6 +127,3 @@ def change_quantity(message_id: int, items: list, sign: int):
             item["product"],
             item["quantity"] * sign
         ))
-
-    conn.commit()
-    conn.close()
