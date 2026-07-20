@@ -1,9 +1,8 @@
 from datetime import datetime
 
-from app.database.db import get_connection
-
 
 def save_message(
+    conn,
     message_id: int,
     chat_id: int,
     user_id: int,
@@ -11,7 +10,6 @@ def save_message(
     reason: str,
     message_text: str,
 ):
-    conn = get_connection()
     cursor = conn.cursor()
 
     now = datetime.now().isoformat(timespec="seconds")
@@ -39,12 +37,8 @@ def save_message(
         now
     ))
 
-    conn.commit()
-    conn.close()
 
-
-def get_message(message_id: int):
-    conn = get_connection()
+def get_message(conn, message_id: int):
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -53,19 +47,15 @@ def get_message(message_id: int):
         WHERE message_id = ?
     """, (message_id,))
 
-    message = cursor.fetchone()
-
-    conn.close()
-
-    return message
+    return cursor.fetchone()
 
 
 def update_message(
+    conn,
     message_id: int,
     reason: str,
     message_text: str,
 ):
-    conn = get_connection()
     cursor = conn.cursor()
 
     now = datetime.now().isoformat(timespec="seconds")
@@ -84,18 +74,11 @@ def update_message(
         message_id
     ))
 
-    conn.commit()
-    conn.close()
 
-
-def delete_message(message_id: int):
-    conn = get_connection()
+def delete_message(conn, message_id: int):
     cursor = conn.cursor()
 
     cursor.execute("""
         DELETE FROM messages
         WHERE message_id = ?
     """, (message_id,))
-
-    conn.commit()
-    conn.close()
