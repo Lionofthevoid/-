@@ -23,14 +23,6 @@ def format_error(error: Exception) -> str:
     if isinstance(error, UnknownReason):
         return (
             "❌ Не указана причина списания.\n\n"
-            "Возможные причины:\n"
-            "• срок\n"
-            "• челфак\n"
-            "• обуч\n"
-            "• маркетинг\n"
-            "• нужды\n"
-            "• порча\n"
-            "• акция"
         )
 
     if isinstance(error, InvalidQuantity):
