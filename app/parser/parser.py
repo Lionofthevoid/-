@@ -99,13 +99,28 @@ def parse_item(line: str):
 
     line, multiplier = extract_multiplier(line)
 
+    # Сначала проверяем, не является ли вся строка названием товара
+    # Например:
+    # "стакан 0.3" -> "стакан 0,3"
+    try:
+        product = find_product(line)
+
+        return {
+            "product": product,
+            "quantity": 1 * multiplier
+        }
+
+    except UnknownProduct:
+        pass
+
+    # Если вся строка не является товаром,
+    # тогда извлекаем количество
     quantity, line = extract_quantity(line)
 
     if quantity is None:
         raise InvalidQuantity()
 
-    # убираем лишние слова
-
+    # Убираем единицы измерения
     line = re.sub(r"\b(г|гр|мл|шт)\b", "", line)
 
     line = normalize(line)
